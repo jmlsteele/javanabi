@@ -16,8 +16,6 @@ public interface Player {
 
     void drawCard();
     
-    void notifyGameState(GameState state);
-    
     void notifyPlayerAction(String playerName, Action action);
     
     void notifyGameEnd(int score, boolean won);

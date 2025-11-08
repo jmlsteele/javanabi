@@ -28,11 +28,8 @@ public class SimpleAIPlayer implements Player {
     
     @Override
     public void initialize(GameState initialState) {
+        System.out.println(initialState);
         this.currentState = initialState;
-        initializeCardKnowledge();
-    }
-    
-    private void initializeCardKnowledge() {
         // Initialize my own knowledge
         int handSize = currentState.getPlayerHandSize(this);
         myCardKnowledge.clear();
@@ -130,36 +127,6 @@ public class SimpleAIPlayer implements Player {
         for (int index : clue.getCardIndices()) {
             if (index < playerKnowledge.size()) {
                 playerKnowledge.get(index).applyClue(clue);
-            }
-        }
-    }
-    
-    private void updateCardKnowledge() {
-        // Update my own knowledge
-        int handSize = currentState.getPlayerHandSize(this);
-        // Ensure knowledge list matches hand size
-        while (myCardKnowledge.size() < handSize) {
-            myCardKnowledge.add(new CardKnowledge());
-        }
-        while (myCardKnowledge.size() > handSize) {
-            myCardKnowledge.remove(myCardKnowledge.size() - 1);
-        }
-        
-        // Update other players' knowledge
-        for (Player player : currentState.getPlayers()) {
-            if (!player.equals(this)) {
-                List<CardKnowledge> playerKnowledge = otherPlayersKnowledge.get(player);
-                if (playerKnowledge != null) {
-                    int playerHandSize = currentState.getPlayerHandSize(player);
-                    
-                    // Ensure knowledge list matches hand size
-                    while (playerKnowledge.size() < playerHandSize) {
-                        playerKnowledge.add(new CardKnowledge());
-                    }
-                    while (playerKnowledge.size() > playerHandSize) {
-                        playerKnowledge.remove(playerKnowledge.size() - 1);
-                    }
-                }
             }
         }
     }
@@ -279,30 +246,6 @@ public class SimpleAIPlayer implements Player {
         return Optional.empty();
     }
     
-    private boolean isCardUseless(Card card, CardKnowledge knowledge) {
-        if (!knowledge.isKnownSuit() || !knowledge.isKnownRank()) {
-            return false;
-        }
-        
-        // Check if card rank is lower than highest played card of same suit
-        Map<Card.Suit, List<Card>> playedCards = currentState.getPlayedCards();
-        List<Card> suitCards = playedCards.get(card.getSuit());
-        
-        if (!suitCards.isEmpty()) {
-            int highestPlayed = suitCards.get(suitCards.size() - 1).getRank();
-            if (card.getRank() <= highestPlayed) {
-                return true;
-            }
-        }
-        
-        // Check if all cards of this rank are already played/discarded
-        if (areAllCardsOfRankPlayed(card.getRank())) {
-            return true;
-        }
-        
-        return false;
-    }
-    
     private boolean isCardUseless(CardKnowledge knowledge) {
         if (!knowledge.isKnownSuit() || !knowledge.isKnownRank()) {
             return false;
@@ -380,12 +323,6 @@ public class SimpleAIPlayer implements Player {
                 myCardKnowledge.get(i).applyNegativeClue(clue);
             }
         }
-    }
-    
-    @Override
-    public void notifyGameState(GameState state) {
-        this.currentState = state;
-        updateCardKnowledge();
     }
     
     @Override
