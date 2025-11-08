@@ -3,7 +3,7 @@ package com.javanabi.game;
 import com.javanabi.domain.Card;
 import com.javanabi.game.action.*;
 import com.javanabi.game.state.GameState;
-import com.javanabi.util.CardKnowledge;
+import com.javanabi.players.SimpleAIPlayer;
 
 import java.util.*;
 

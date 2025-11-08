@@ -2,7 +2,7 @@ package com.javanabi.test;
 
 import com.javanabi.game.GameEngine;
 import com.javanabi.game.Player;
-import com.javanabi.game.SimpleAIPlayer;
+import com.javanabi.players.SimpleAIPlayer;
 
 import java.util.List;
 

@@ -2,48 +2,70 @@ package com.javanabi;
 
 import com.javanabi.game.GameEngine;
 import com.javanabi.game.Player;
-import com.javanabi.game.SimpleAIPlayer;
 import com.javanabi.game.action.Action;
 import com.javanabi.game.action.DiscardCardAction;
 import com.javanabi.game.action.GiveInfoAction;
 import com.javanabi.game.action.PlayCardAction;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
 public class HanabiServer {
     public static void main(String[] args) {
+        // Validate player count
+        if (args.length < 2 || args.length > 5) {
+            System.err.println("Usage: java HanabiServer <PlayerClass1> <PlayerClass2> [PlayerClass3] [PlayerClass4] [PlayerClass5]");
+            System.err.println("Valid player count: 2-5");
+            System.err.println("Example: java HanabiServer SimpleAIPlayer SimpleAIPlayer AdvancedAIPlayer");
+            System.err.println("Available player classes: SimpleAIPlayer");
+            System.exit(1);
+        }
+        
         System.out.println("Starting Hanabi Server...");
         
-        List<Player> players = List.of(
-            new SimpleAIPlayer("AI_Player1"),
-            new SimpleAIPlayer("AI_Player2"),
-            new SimpleAIPlayer("AI_Player3")
-        );
+        // Create players dynamically based on arguments
+        List<Player> players = new ArrayList<>();
+        
+        for (int i = 0; i < args.length; i++) {
+            String className = args[i];
+            String playerName = "Player" + (i + 1);
+            
+            try {
+                // Try to load the class from com.javanabi.game package
+                String fullClassName = "com.javanabi.players." + className;
+                Class<?> playerClass = Class.forName(fullClassName);
+                
+                // Create instance using constructor that takes String parameter (player name)
+                Player player =  (Player) playerClass.getDeclaredConstructor(String.class).newInstance(playerName);
+                players.add(player);
+                System.out.println("Created " + playerName + " as " + className);
+            } catch (Exception e) {
+                System.err.println("Error creating " + playerName + " as " + className + ": " + e.getMessage());
+                System.exit(1);
+            }
+        }
+                
+        if (players.isEmpty()) {
+            System.err.println("Failed to create any players. Exiting.");
+            System.exit(1);
+        }
         
         GameEngine game = new GameEngine(players);
-        System.out.println("Game created with " + players.size() + " AI players");
+        System.out.println("Game created with " + players.size() + " players");
+        System.out.println("Players: " + getPlayerNames(players));
         System.out.println("Initial game state:");
         System.out.println("  Info tokens: " + game.getGameState().getInfoTokens());
         System.out.println("  Fuse tokens: " + game.getGameState().getFuseTokens());
         System.out.println("  Deck size: " + game.getGameState().getDeckSize());
         System.out.println("  Current player: " + game.getCurrentPlayer().getName());
         
-        System.out.println("\nStarting AI vs AI game simulation...");
+        System.out.println("\nStarting game simulation...");
         System.out.println("Press Enter to play next turn, or 'auto' to play automatically");
         
         Scanner scanner = new Scanner(System.in);
-        boolean autoPlay = false;
         
         while (!game.isGameOver()) {
-            if (!autoPlay) {
-                System.out.print("\n> ");
-                String input = scanner.nextLine();
-                if (input.trim().equalsIgnoreCase("auto")) {
-                    autoPlay = true;
-                }
-            }
-            
             Player currentPlayer = game.getCurrentPlayer();
             System.out.println("\n" + currentPlayer.getName() + "'s turn:");
             
@@ -59,14 +81,6 @@ public class HanabiServer {
             } else {
                 System.out.println("Invalid action!");
             }
-            
-            if (autoPlay) {
-                try {
-                    Thread.sleep(1000); // Pause for readability
-                } catch (InterruptedException e) {
-                    break;
-                }
-            }
         }
         
         System.out.println("\nGame Over!");
@@ -74,6 +88,15 @@ public class HanabiServer {
         System.out.println("Game Won: " + (game.getScore() == 25));
         
         scanner.close();
+    }
+    
+    private static String getPlayerNames(List<Player> players) {
+        StringBuilder names = new StringBuilder();
+        for (int i = 0; i < players.size(); i++) {
+            if (i > 0) names.append(", ");
+            names.append(players.get(i).getName());
+        }
+        return names.toString();
     }
     
     private static String getActionDescription(Action action) {

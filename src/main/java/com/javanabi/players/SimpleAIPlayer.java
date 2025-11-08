@@ -1,6 +1,7 @@
-package com.javanabi.game;
+package com.javanabi.players;
 
 import com.javanabi.domain.Card;
+import com.javanabi.game.Player;
 import com.javanabi.game.action.*;
 import com.javanabi.game.state.GameState;
 import com.javanabi.util.CardKnowledge;

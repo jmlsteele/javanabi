@@ -2,13 +2,10 @@ package com.javanabi.test;
 
 import com.javanabi.game.GameEngine;
 import com.javanabi.game.Player;
-import com.javanabi.game.SimpleAIPlayer;
-import com.javanabi.game.action.GiveInfoAction;
 import com.javanabi.game.state.GameState;
-import com.javanabi.util.CardKnowledge;
+import com.javanabi.players.SimpleAIPlayer;
 
 import java.util.List;
-import java.util.Map;
 
 public class KnowledgeTrackingTest {
     public static void main(String[] args) {
