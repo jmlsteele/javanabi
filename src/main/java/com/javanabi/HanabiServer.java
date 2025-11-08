@@ -9,7 +9,6 @@ import com.javanabi.game.action.PlayCardAction;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 
 public class HanabiServer {
     public static void main(String[] args) {
@@ -60,7 +59,6 @@ public class HanabiServer {
         while (!game.isGameOver()) {
             Player currentPlayer = game.getCurrentPlayer();
             System.out.println("\n" + currentPlayer.getName() + "'s turn:");
-            
             Action action = currentPlayer.takeTurn(game.getPlayerGameState(currentPlayer));
             boolean success = game.executeAction(action);
             
