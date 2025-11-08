@@ -172,7 +172,7 @@ public final class GameState {
     }
 
     public boolean isGameOver() {
-        return deckSize == 0 && currentPlayerIndex == finalPlayerIndex;
+        return fuseTokens == 0 || (deckSize == 0 && currentPlayerIndex == finalPlayerIndex);
     }
     
     public int getDeckSize() {
