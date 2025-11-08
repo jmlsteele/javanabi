@@ -1,6 +1,5 @@
 package com.javanabi.game;
 
-import com.javanabi.domain.Card;
 import com.javanabi.game.action.Action;
 import com.javanabi.game.state.GameState;
 

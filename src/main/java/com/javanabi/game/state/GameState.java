@@ -77,13 +77,13 @@ public final class GameState {
         }
         
         return GameState.builder()
+            .players(players)
+            .currentPlayerIndex(currentPlayerIndex)
             .hands(Collections.unmodifiableMap(filteredHands))
             .playedCards(playedCards)
             .discardPile(discardPile)
             .infoTokens(infoTokens)
             .fuseTokens(fuseTokens)
-            .currentPlayerIndex(currentPlayerIndex)
-            .players(players)
             .gameOver(gameOver)
             .deckSize(deckSize)
             .build();
@@ -93,6 +93,15 @@ public final class GameState {
         return playedCards;
     }
     
+    public List<Card> getPlayableCards() {
+        List<Card>ret = new ArrayList<Card>();
+        for (Card.Suit s :Card.Suit.values()) {
+            int maxPlayed = playedCards.get(s).size();
+            if (maxPlayed < 5) ret.add(new Card(s,maxPlayed+1));
+        }
+        return ret;
+    }
+
     public List<Card> getDiscardPile() {
         return discardPile;
     }
