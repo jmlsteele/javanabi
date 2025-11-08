@@ -55,21 +55,38 @@ public final class GameState {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Cards in Deck:" + deckSize + "\n");
+        sb.append("Cards in Deck: " + deckSize + "\n");
         sb.append("Cards Played:\n");
         for (Card.Suit s:Card.Suit.values()) {
             int size = playedCards.get(s).size();
             if (size > 0) {
-                sb.append("\t" + s + " " + size + "\n");
+                sb.append("\t" + s);
+                for (int i=0;i<size;i++) {
+                    sb.append(" " + (i+1));
+                }
+                sb.append("\n");
             }
         }
         sb.append("Cards Discarded:\n");
         //separate into suits
         for (Card.Suit s:Card.Suit.values()) {
             sb.append("\t" + s + ":");
+            Collections.sort(discardedCards.get(s), new Comparator<Card>() {
+                @Override
+                public int compare(Card arg0, Card arg1) {
+                    return arg0.getRank() - arg1.getRank();
+                }
+
+            });
             for (Card c: discardedCards.get(s)) {
                 sb.append(" " + c.getRank());
             }
+            sb.append("\n");
+        }
+        sb.append("Hands:\n");
+        for (Player p: players) {
+            sb.append("\t" + p.getName() + ": ");
+            sb.append(hands.get(p));
             sb.append("\n");
         }
         return sb.toString();
