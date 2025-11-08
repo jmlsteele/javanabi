@@ -60,6 +60,35 @@ public final class GameState {
         return hands.getOrDefault(player, Collections.emptyList());
     }
     
+    public int getPlayerHandSize(Player player) {
+        List<Card> hand = hands.get(player);
+        return hand != null ? hand.size() : 0;
+    }
+    
+    public GameState getPlayerView(Player player) {
+        // Create a filtered view where the player's own hand is hidden
+        Map<Player, List<Card>> filteredHands = new HashMap<>(hands);
+        // Replace the player's own hand with a list of null cards (same size, but no actual cards)
+        List<Card> ownHand = hands.get(player);
+        if (ownHand != null) {
+            filteredHands.put(player, Collections.unmodifiableList(
+                Collections.nCopies(ownHand.size(), null)
+            ));
+        }
+        
+        return GameState.builder()
+            .hands(Collections.unmodifiableMap(filteredHands))
+            .playedCards(playedCards)
+            .discardPile(discardPile)
+            .infoTokens(infoTokens)
+            .fuseTokens(fuseTokens)
+            .currentPlayerIndex(currentPlayerIndex)
+            .players(players)
+            .gameOver(gameOver)
+            .deckSize(deckSize)
+            .build();
+    }
+    
     public Map<Card.Suit, List<Card>> getPlayedCards() {
         return playedCards;
     }

@@ -85,6 +85,20 @@ public final class CardKnowledge {
         return isKnownRank;
     }
     
+    public Card.Suit getKnownSuit() {
+        if (!isKnownSuit) {
+            throw new IllegalStateException("Suit is not known");
+        }
+        return possibleSuits.iterator().next();
+    }
+    
+    public int getKnownRank() {
+        if (!isKnownRank) {
+            throw new IllegalStateException("Rank is not known");
+        }
+        return possibleRanks.iterator().next();
+    }
+    
     public boolean isCardPossible(Card card) {
         return possibleSuits.contains(card.getSuit()) && possibleRanks.contains(card.getRank());
     }

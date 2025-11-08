@@ -60,7 +60,7 @@ public class GameEngine {
         }
         
         for (Player player : players) {
-            player.initialize(gameState);
+            player.initialize(gameState.getPlayerView(player));
         }
     }
     
@@ -280,12 +280,16 @@ public class GameEngine {
     
     private void notifyPlayers() {
         for (Player player : players) {
-            player.notifyGameState(gameState);
+            player.notifyGameState(gameState.getPlayerView(player));
         }
     }
     
     public GameState getGameState() {
-        return gameState;
+        return gameState; // Full game state for server/admin use
+    }
+    
+    public GameState getPlayerGameState(Player player) {
+        return gameState.getPlayerView(player); // Filtered view for players
     }
     
     public Player getCurrentPlayer() {
