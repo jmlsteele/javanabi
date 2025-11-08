@@ -94,6 +94,9 @@ public class GameEngine {
         
         gameState = action.accept(visitor);
         
+        // Notify all players about the action that was taken
+        notifyPlayerAction(currentPlayer, action);
+        
         if (!gameState.isGameOver()) {
             nextTurn();
         }
@@ -276,6 +279,12 @@ public class GameEngine {
     
     private void nextTurn() {
         currentPlayerIndex = (currentPlayerIndex + 1) % players.size();
+    }
+    
+    private void notifyPlayerAction(Player currentPlayer, Action action) {
+        for (Player player : players) {
+            player.notifyPlayerAction(currentPlayer.getName(), action);
+        }
     }
     
     private void notifyPlayers() {
