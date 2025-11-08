@@ -54,7 +54,7 @@ public class GameEngine {
                 .fuseTokens(gameState.getFuseTokens())
                 .currentPlayerIndex(currentPlayerIndex)
                 .players(gameState.getPlayers())
-                .gameOver(gameState.isGameOver())
+                .finalPlayerIndex(gameState.getFinalPlayerIndex())
                 .deckSize(deck.size())
                 .build();
         }
@@ -96,13 +96,7 @@ public class GameEngine {
         
         // Notify all players about the action that was taken
         notifyPlayerAction(currentPlayer, action);
-        
-        if (!gameState.isGameOver()) {
-            nextTurn();
-        }
-        
-        notifyPlayers();
-        
+        nextTurn();
         return true;
     }
     
@@ -151,7 +145,7 @@ public class GameEngine {
         Player.Clue clue = new Player.Clue(
             action.getClueType(),
             action.getClueValue(),
-            matchingIndices.stream().mapToInt(i -> i).toArray()
+            matchingIndices
         );
         
         targetPlayer.receiveClue(clue);
@@ -164,7 +158,7 @@ public class GameEngine {
             .fuseTokens(gameState.getFuseTokens())
             .currentPlayerIndex(currentPlayerIndex)
             .players(gameState.getPlayers())
-            .gameOver(gameState.isGameOver())
+            .finalPlayerIndex(gameState.getFinalPlayerIndex())
             .deckSize(deck.size())
             .build();
     }
@@ -204,14 +198,17 @@ public class GameEngine {
         } else if (playedCard.getRank() == 5) {
             infoTokens = Math.min(infoTokens + 1, 8);
         }
+
+        int finalPlayerIndex = gameState.getFinalPlayerIndex();
         
         Card drawnCard = deck.drawCard();
-        if (drawnCard != null) {
+        if (drawnCard == null) {
+            if (finalPlayerIndex == -1) finalPlayerIndex = currentPlayerIndex;
+        } else {
             hand.add(drawnCard);
             updatedHands.put(currentPlayer, hand);
+            currentPlayer.drawCard();
         }
-        
-        boolean gameOver = fuseTokens == 0 || isGameWon(playedCards) || (deck.isEmpty() && isFinalRound());
         
         return GameState.builder()
             .hands(updatedHands)
@@ -221,7 +218,7 @@ public class GameEngine {
             .fuseTokens(fuseTokens)
             .currentPlayerIndex(currentPlayerIndex)
             .players(gameState.getPlayers())
-            .gameOver(gameOver)
+            .finalPlayerIndex(finalPlayerIndex)
             .deckSize(deck.size())
             .build();
     }
@@ -237,15 +234,18 @@ public class GameEngine {
         List<Card> discardPile = new ArrayList<>(gameState.getDiscardPile());
         discardPile.add(discardedCard);
         
+        int finalPlayerIndex = gameState.getFinalPlayerIndex();
+        
         Card drawnCard = deck.drawCard();
-        if (drawnCard != null) {
+        if (drawnCard == null) {
+            if (finalPlayerIndex == -1) finalPlayerIndex = currentPlayerIndex;
+        } else {
             hand.add(drawnCard);
             updatedHands.put(currentPlayer, hand);
+            currentPlayer.drawCard();
         }
-        
         int infoTokens = Math.min(gameState.getInfoTokens() + 1, 8);
-        boolean gameOver = deck.isEmpty() && isFinalRound();
-        
+
         return GameState.builder()
             .hands(updatedHands)
             .playedCards(gameState.getPlayedCards())
@@ -254,27 +254,9 @@ public class GameEngine {
             .fuseTokens(gameState.getFuseTokens())
             .currentPlayerIndex(currentPlayerIndex)
             .players(gameState.getPlayers())
-            .gameOver(gameOver)
+            .finalPlayerIndex(finalPlayerIndex)
             .deckSize(deck.size())
             .build();
-    }
-    
-    private boolean isGameWon(Map<Card.Suit, List<Card>> playedCards) {
-        for (List<Card> suitCards : playedCards.values()) {
-            if (suitCards.size() < 5 || suitCards.get(suitCards.size() - 1).getRank() != 5) {
-                return false;
-            }
-        }
-        return true;
-    }
-    
-    private boolean isFinalRound() {
-        for (List<Card> hand : gameState.getHands().values()) {
-            if (!hand.isEmpty()) {
-                return false;
-            }
-        }
-        return true;
     }
     
     private void nextTurn() {
@@ -284,12 +266,6 @@ public class GameEngine {
     private void notifyPlayerAction(Player currentPlayer, Action action) {
         for (Player player : players) {
             player.notifyPlayerAction(currentPlayer.getName(), action);
-        }
-    }
-    
-    private void notifyPlayers() {
-        for (Player player : players) {
-            player.notifyGameState(gameState.getPlayerView(player));
         }
     }
     

@@ -13,7 +13,7 @@ public final class GameState {
     private final int fuseTokens;
     private final int currentPlayerIndex;
     private final List<Player> players;
-    private final boolean gameOver;
+    private final int finalPlayerIndex;
     private final int deckSize;
     
     private GameState(Builder builder) {
@@ -24,7 +24,7 @@ public final class GameState {
         this.fuseTokens = builder.fuseTokens;
         this.currentPlayerIndex = builder.currentPlayerIndex;
         this.players = Collections.unmodifiableList(new ArrayList<>(builder.players));
-        this.gameOver = builder.gameOver;
+        this.finalPlayerIndex = builder.finalPlayerIndex;
         this.deckSize = builder.deckSize;
     }
     
@@ -38,7 +38,7 @@ public final class GameState {
         builder.infoTokens = 8;
         builder.fuseTokens = 3;
         builder.currentPlayerIndex = 0;
-        builder.gameOver = false;
+        builder.finalPlayerIndex = -1;
         builder.deckSize = 50;
         
         for (Player player : players) {
@@ -84,7 +84,7 @@ public final class GameState {
             .discardPile(discardPile)
             .infoTokens(infoTokens)
             .fuseTokens(fuseTokens)
-            .gameOver(gameOver)
+            .finalPlayerIndex(finalPlayerIndex)
             .deckSize(deckSize)
             .build();
     }
@@ -127,8 +127,12 @@ public final class GameState {
         return players;
     }
     
+    public int getFinalPlayerIndex() {
+        return finalPlayerIndex;
+    }
+
     public boolean isGameOver() {
-        return gameOver;
+        return deckSize == 0 && currentPlayerIndex == finalPlayerIndex;
     }
     
     public int getDeckSize() {
@@ -162,7 +166,7 @@ public final class GameState {
         private int fuseTokens = 3;
         private int currentPlayerIndex = 0;
         private List<Player> players = new ArrayList<>();
-        private boolean gameOver = false;
+        private int finalPlayerIndex = -1;
         private int deckSize = 50;
         
         public Builder hands(Map<Player, List<Card>> hands) {
@@ -200,8 +204,8 @@ public final class GameState {
             return this;
         }
         
-        public Builder gameOver(boolean gameOver) {
-            this.gameOver = gameOver;
+        public Builder finalPlayerIndex(int finalPlayerIndex) {
+            this.finalPlayerIndex = finalPlayerIndex;
             return this;
         }
         

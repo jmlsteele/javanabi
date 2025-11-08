@@ -57,12 +57,13 @@ public class SimpleAIPlayer implements Player {
     @Override
     public Action takeTurn(GameState currentState) {
         this.currentState = currentState;
-        updateCardKnowledge();
         
         // Priority 1: Play 100% certain card
         Optional<Integer> playableCard = findCertainPlayableCard();
         if (playableCard.isPresent()) {
-            return new PlayCardAction(playableCard.get());
+            int cardIndex = playableCard.get();
+            myCardKnowledge.remove(cardIndex);
+            return new PlayCardAction(cardIndex);
         }
         
         // Priority 2: Give useful hint
@@ -76,13 +77,21 @@ public class SimpleAIPlayer implements Player {
         // Priority 3: Discard known useless card
         Optional<Integer> uselessCard = findUselessCard();
         if (uselessCard.isPresent()) {
-            return new DiscardCardAction(uselessCard.get());
+            int cardIndex = uselessCard.get();
+            myCardKnowledge.remove(cardIndex);
+            return new DiscardCardAction(cardIndex);
         }
         
         // Priority 4: Discard oldest card
+        System.out.println(myCardKnowledge.size());
+        myCardKnowledge.remove(0);
         return new DiscardCardAction(0);
     }
     
+    public void drawCard() {
+        myCardKnowledge.add(new CardKnowledge());
+    }
+
     private void updateOtherPlayerKnowledge(Player targetPlayer, GiveInfoAction giveInfoAction) {
         List<CardKnowledge> playerKnowledge = otherPlayersKnowledge.get(targetPlayer);
         if (playerKnowledge == null) {
@@ -114,14 +123,13 @@ public class SimpleAIPlayer implements Player {
         Player.Clue clue = new Player.Clue(
             giveInfoAction.getClueType(),
             giveInfoAction.getClueValue(),
-            matchingIndices.stream().mapToInt(i -> i).toArray()
+            matchingIndices
         );
         
         // Update knowledge for cards that match the clue
         for (int index : clue.getCardIndices()) {
             if (index < playerKnowledge.size()) {
-                CardKnowledge updatedKnowledge = playerKnowledge.get(index).applyClue(clue);
-                playerKnowledge.set(index, updatedKnowledge);
+                playerKnowledge.get(index).applyClue(clue);
             }
         }
     }
@@ -171,36 +179,25 @@ public class SimpleAIPlayer implements Player {
     }
     
     private boolean isCardCertainPlayable(CardKnowledge knowledge) {
-        if (!knowledge.isKnownSuit() || !knowledge.isKnownRank()) {
-            return false;
+        //if we know exactly what card it is, we know if it's playable or not
+        if (knowledge.isKnownSuit() && knowledge.isKnownRank()) {
+            return isCardPlayable(new Card(knowledge.getKnownSuit(), knowledge.getKnownRank()));
         }
         
-        // Check if this card would be playable based on the known suit and rank
-        return isCardPlayable(knowledge.getKnownSuit(), knowledge.getKnownRank());
+        //if we know the rank, and all cards of that rank are playable then the card is playable
+        if (knowledge.isKnownRank()) {
+            boolean playable = true;
+            for (Card.Suit s : Card.Suit.values()) {
+                if (!isCardPlayable(new Card(s,knowledge.getKnownRank()))) {playable=false; break;}
+            }
+            return playable;
+        }
+        return false;
     }
     
     private boolean isCardPlayable(Card card) {
-        Map<Card.Suit, List<Card>> playedCards = currentState.getPlayedCards();
-        List<Card> suitCards = playedCards.get(card.getSuit());
-        
-        if (suitCards.isEmpty()) {
-            return card.getRank() == 1;
-        } else {
-            Card highestPlayed = suitCards.get(suitCards.size() - 1);
-            return card.getRank() == highestPlayed.getRank() + 1;
-        }
-    }
-    
-    private boolean isCardPlayable(Card.Suit suit, int rank) {
-        Map<Card.Suit, List<Card>> playedCards = currentState.getPlayedCards();
-        List<Card> suitCards = playedCards.get(suit);
-        
-        if (suitCards.isEmpty()) {
-            return rank == 1;
-        } else {
-            Card highestPlayed = suitCards.get(suitCards.size() - 1);
-            return rank == highestPlayed.getRank() + 1;
-        }
+        List<Card> playableCards = currentState.getPlayableCards();
+        return playableCards.contains(card);
     }
     
     private Optional<GiveInfoAction> findUsefulHint() {
@@ -376,11 +373,11 @@ public class SimpleAIPlayer implements Player {
     
     @Override
     public void receiveClue(Clue clue) {
-        // Update knowledge for cards that match the clue
-        for (int index : clue.getCardIndices()) {
-            if (index < myCardKnowledge.size()) {
-                CardKnowledge updatedKnowledge = myCardKnowledge.get(index).applyClue(clue);
-                myCardKnowledge.set(index, updatedKnowledge);
+        for (int i=0;i<currentState.getPlayerHandSize(this);i++) {
+            if (clue.getCardIndices().contains(i)) {
+                myCardKnowledge.get(i).applyClue(clue);
+            }else {
+                myCardKnowledge.get(i).applyNegativeClue(clue);
             }
         }
     }

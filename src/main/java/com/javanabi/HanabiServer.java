@@ -61,9 +61,6 @@ public class HanabiServer {
         System.out.println("  Current player: " + game.getCurrentPlayer().getName());
         
         System.out.println("\nStarting game simulation...");
-        System.out.println("Press Enter to play next turn, or 'auto' to play automatically");
-        
-        Scanner scanner = new Scanner(System.in);
         
         while (!game.isGameOver()) {
             Player currentPlayer = game.getCurrentPlayer();
@@ -86,8 +83,6 @@ public class HanabiServer {
         System.out.println("\nGame Over!");
         System.out.println("Final Score: " + game.getScore());
         System.out.println("Game Won: " + (game.getScore() == 25));
-        
-        scanner.close();
     }
     
     private static String getPlayerNames(List<Player> players) {

@@ -1,5 +1,7 @@
 package com.javanabi.game;
 
+import java.util.List;
+
 import com.javanabi.game.action.Action;
 import com.javanabi.game.state.GameState;
 
@@ -11,6 +13,8 @@ public interface Player {
     Action takeTurn(GameState currentState);
     
     void receiveClue(Clue clue);
+
+    void drawCard();
     
     void notifyGameState(GameState state);
     
@@ -25,16 +29,16 @@ public interface Player {
     public static final class Clue {
         private final ClueType type;
         private final Object value;
-        private final int[] cardIndices;
+        private final List<Integer> cardIndices;
         
-        public Clue(ClueType type, Object value, int[] cardIndices) {
+        public Clue(ClueType type, Object value, List<Integer> cardIndices) {
             this.type = type;
             this.value = value;
-            this.cardIndices = cardIndices.clone();
+            this.cardIndices = cardIndices;
         }
         
         public ClueType getType() { return type; }
         public Object getValue() { return value; }
-        public int[] getCardIndices() { return cardIndices.clone(); }
+        public List<Integer> getCardIndices() { return cardIndices; }
     }
 }
