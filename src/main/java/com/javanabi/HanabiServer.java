@@ -29,7 +29,7 @@ public class HanabiServer {
         
         for (int i = 0; i < args.length; i++) {
             String className = args[i];
-            String playerName = "Player" + (i + 1);
+            String playerName = "Player " + (i + 1);
             
             try {
                 // Try to load the class from com.javanabi.game package
@@ -44,11 +44,6 @@ public class HanabiServer {
                 System.err.println("Error creating " + playerName + " as " + className + ": " + e.getMessage());
                 System.exit(1);
             }
-        }
-                
-        if (players.isEmpty()) {
-            System.err.println("Failed to create any players. Exiting.");
-            System.exit(1);
         }
         
         GameEngine game = new GameEngine(players);
@@ -99,7 +94,7 @@ public class HanabiServer {
             @Override
             public String visit(GiveInfoAction giveInfoAction) {
                 return "Give info about " + giveInfoAction.getClueType() + " " + giveInfoAction.getClueValue() + 
-                       " to " + giveInfoAction.getTargetPlayer().getName();
+                       " to " + giveInfoAction.getTargetPlayer();
             }
             
             @Override

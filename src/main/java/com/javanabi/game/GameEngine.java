@@ -13,6 +13,7 @@ public class GameEngine {
     private GameState gameState;
     private final Deck deck;
     private final List<Player> players;
+    private final List<String> playerNames;
     private int currentPlayerIndex;
     
     public GameEngine(List<Player> players) {
@@ -20,14 +21,15 @@ public class GameEngine {
             throw new IllegalArgumentException("Hanabi requires 2-5 players");
         }
         this.players = new ArrayList<>(players);
+        this.playerNames = new ArrayList<>();
+        for(Player p: this.players) {
+            this.playerNames.add(p.getName());
+        }
+
         this.deck = new Deck();
         this.currentPlayerIndex = 0;
-        initializeGame();
-    }
-    
-    private void initializeGame() {
         deck.shuffle();
-        gameState = GameState.initialGameState(players);
+        gameState = GameState.initialGameState(this.playerNames);
         dealInitialHands();
     }
     
@@ -43,8 +45,8 @@ public class GameEngine {
                 }
             }
             
-            Map<Player, List<Card>> updatedHands = new HashMap<>(gameState.getHands());
-            updatedHands.put(player, hand);
+            Map<String, List<Card>> updatedHands = new HashMap<>(gameState.getHands());
+            updatedHands.put(player.getName(), hand);
             
             gameState = GameState.builder()
                 .hands(updatedHands)
@@ -60,7 +62,7 @@ public class GameEngine {
         }
         
         for (Player player : players) {
-            player.initialize(gameState.getPlayerView(player));
+            player.initialize(gameState.getPlayerView(player.getName()));
         }
     }
     
@@ -110,21 +112,22 @@ public class GameEngine {
             
             @Override
             public Boolean visit(PlayCardAction playCardAction) {
-                List<Card> hand = gameState.getPlayerHand(currentPlayer);
+                List<Card> hand = gameState.getPlayerHand(currentPlayer.getName());
                 return playCardAction.getHandIndex() < hand.size();
             }
             
             @Override
             public Boolean visit(DiscardCardAction discardCardAction) {
-                List<Card> hand = gameState.getPlayerHand(currentPlayer);
+                List<Card> hand = gameState.getPlayerHand(currentPlayer.getName());
                 return discardCardAction.getHandIndex() < hand.size();
             }
         });
     }
     
     private GameState handleGiveInfoAction(GiveInfoAction action) {
-        Player targetPlayer = action.getTargetPlayer();
-        List<Card> targetHand = gameState.getPlayerHand(targetPlayer);
+        String targetPlayerName = action.getTargetPlayer();
+        Player targetPlayer = this.players.get(this.playerNames.indexOf(targetPlayerName));
+        List<Card> targetHand = gameState.getPlayerHand(targetPlayerName);
         List<Integer> matchingIndices = new ArrayList<>();
         
         for (int i = 0; i < targetHand.size(); i++) {
@@ -165,11 +168,11 @@ public class GameEngine {
     
     private GameState handlePlayCardAction(PlayCardAction action) {
         Player currentPlayer = players.get(currentPlayerIndex);
-        List<Card> hand = new ArrayList<>(gameState.getPlayerHand(currentPlayer));
+        List<Card> hand = new ArrayList<>(gameState.getPlayerHand(currentPlayer.getName()));
         Card playedCard = hand.remove(action.getHandIndex());
         
-        Map<Player, List<Card>> updatedHands = new HashMap<>(gameState.getHands());
-        updatedHands.put(currentPlayer, hand);
+        Map<String, List<Card>> updatedHands = new HashMap<>(gameState.getHands());
+        updatedHands.put(currentPlayer.getName(), hand);
         
         Map<Card.Suit, List<Card>> playedCards = new HashMap<>(gameState.getPlayedCards());
         Map<Card.Suit, List<Card>> discardedCards = new HashMap<>(gameState.getDiscardedCards());
@@ -206,7 +209,7 @@ public class GameEngine {
             if (finalPlayerIndex == -1) finalPlayerIndex = currentPlayerIndex;
         } else {
             hand.add(drawnCard);
-            updatedHands.put(currentPlayer, hand);
+            updatedHands.put(currentPlayer.getName(), hand);
             currentPlayer.drawCard();
         }
         
@@ -225,12 +228,12 @@ public class GameEngine {
     
     private GameState handleDiscardCardAction(DiscardCardAction action) {
         Player currentPlayer = players.get(currentPlayerIndex);
-        List<Card> hand = new ArrayList<>(gameState.getPlayerHand(currentPlayer));
+        List<Card> hand = new ArrayList<>(gameState.getPlayerHand(currentPlayer.getName()));
         Map<Card.Suit, List<Card>> discardedCards = new HashMap<>(gameState.getDiscardedCards());
         Card discardedCard = hand.remove(action.getHandIndex());
         
-        Map<Player, List<Card>> updatedHands = new HashMap<>(gameState.getHands());
-        updatedHands.put(currentPlayer, hand);
+        Map<String, List<Card>> updatedHands = new HashMap<>(gameState.getHands());
+        updatedHands.put(currentPlayer.getName(), hand);
         
         discardedCards.get(discardedCard.getSuit()).add(discardedCard);
         
@@ -241,7 +244,7 @@ public class GameEngine {
             if (finalPlayerIndex == -1) finalPlayerIndex = currentPlayerIndex;
         } else {
             hand.add(drawnCard);
-            updatedHands.put(currentPlayer, hand);
+            updatedHands.put(currentPlayer.getName(), hand);
             currentPlayer.drawCard();
         }
         int infoTokens = Math.min(gameState.getInfoTokens() + 1, 8);
@@ -274,7 +277,7 @@ public class GameEngine {
     }
     
     public GameState getPlayerGameState(Player player) {
-        return gameState.getPlayerView(player); // Filtered view for players
+        return gameState.getPlayerView(player.getName()); // Filtered view for players
     }
     
     public Player getCurrentPlayer() {

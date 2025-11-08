@@ -13,7 +13,7 @@ public class SimpleAIPlayer implements Player {
     private final String name;
     private GameState currentState;
     private List<CardKnowledge> myCardKnowledge;
-    private Map<Player, List<CardKnowledge>> otherPlayersKnowledge;
+    private Map<String, List<CardKnowledge>> otherPlayersKnowledge;
     
     public SimpleAIPlayer(String name) {
         this.name = name;
@@ -31,7 +31,7 @@ public class SimpleAIPlayer implements Player {
         System.out.println(initialState);
         this.currentState = initialState;
         // Initialize my own knowledge
-        int handSize = currentState.getPlayerHandSize(this);
+        int handSize = currentState.getPlayerHandSize(this.name);
         myCardKnowledge.clear();
         for (int i = 0; i < handSize; i++) {
             myCardKnowledge.add(new CardKnowledge());
@@ -39,7 +39,7 @@ public class SimpleAIPlayer implements Player {
         
         // Initialize knowledge tracking for other players
         otherPlayersKnowledge.clear();
-        for (Player player : currentState.getPlayers()) {
+        for (String player : currentState.getPlayers()) {
             if (!player.equals(this)) {
                 int playerHandSize = currentState.getPlayerHandSize(player);
                 List<CardKnowledge> playerKnowledge = new ArrayList<>();
@@ -85,11 +85,55 @@ public class SimpleAIPlayer implements Player {
         return new DiscardCardAction(0);
     }
     
+    @Override
+    public void receiveClue(Clue clue) {
+        for (int i=0;i<currentState.getPlayerHandSize(this.name);i++) {
+            if (clue.getCardIndices().contains(i)) {
+                myCardKnowledge.get(i).applyClue(clue);
+            }else {
+                myCardKnowledge.get(i).applyNegativeClue(clue);
+            }
+        }
+    }
+
+    @Override
     public void drawCard() {
         myCardKnowledge.add(new CardKnowledge());
     }
 
-    private void updateOtherPlayerKnowledge(Player targetPlayer, GiveInfoAction giveInfoAction) {
+    @Override
+    public void notifyPlayerAction(String playerName, Action action) {
+        // Track when clues are given to other players
+        action.accept(new Action.ActionVisitor<Void>() {
+            @Override
+            public Void visit(GiveInfoAction giveInfoAction) {
+                String targetPlayer = giveInfoAction.getTargetPlayer();
+                if (!targetPlayer.equals(SimpleAIPlayer.this.name)) {
+                    // Update our tracking of this player's knowledge
+                    updateOtherPlayerKnowledge(targetPlayer, giveInfoAction);
+                }
+                return null;
+            }
+            
+            @Override
+            public Void visit(PlayCardAction playCardAction) {
+                playCardAction.getHandIndex();
+                return null;
+            }
+            
+            @Override
+            public Void visit(DiscardCardAction discardCardAction) {
+                return null;
+            }
+        });
+    }
+    
+    @Override
+    public void notifyGameEnd(int score, boolean won) {
+        System.out.println(name + " - Game ended! Score: " + score + ", Won: " + won);
+    }
+
+    private void updateOtherPlayerKnowledge(String targetPlayer, GiveInfoAction giveInfoAction) {
         List<CardKnowledge> playerKnowledge = otherPlayersKnowledge.get(targetPlayer);
         if (playerKnowledge == null) {
             // Initialize knowledge for this player if not already tracked
@@ -132,7 +176,7 @@ public class SimpleAIPlayer implements Player {
     }
     
     private Optional<Integer> findCertainPlayableCard() {
-        int handSize = currentState.getPlayerHandSize(this);
+        int handSize = currentState.getPlayerHandSize(this.name);
         
         for (int i = 0; i < handSize; i++) {
             CardKnowledge knowledge = myCardKnowledge.get(i);
@@ -168,9 +212,9 @@ public class SimpleAIPlayer implements Player {
     }
     
     private Optional<GiveInfoAction> findUsefulHint() {
-        List<Player> otherPlayers = getOtherPlayers();
+        List<String> otherPlayers = getOtherPlayers();
         
-        for (Player targetPlayer : otherPlayers) {
+        for (String targetPlayer : otherPlayers) {
             List<Card> targetHand = currentState.getPlayerHand(targetPlayer);
             List<CardKnowledge> targetKnowledge = otherPlayersKnowledge.get(targetPlayer);
             
@@ -196,7 +240,7 @@ public class SimpleAIPlayer implements Player {
         return Optional.empty();
     }
     
-    private Optional<GiveInfoAction> createHintForCard(Player targetPlayer, int cardIndex, Card card, CardKnowledge currentKnowledge) {
+    private Optional<GiveInfoAction> createHintForCard(String targetPlayer, int cardIndex, Card card, CardKnowledge currentKnowledge) {
         List<Card> targetHand = currentState.getPlayerHand(targetPlayer);
         List<Integer> matchingIndices = new ArrayList<>();
         
@@ -233,7 +277,7 @@ public class SimpleAIPlayer implements Player {
     }
     
     private Optional<Integer> findUselessCard() {
-        int handSize = currentState.getPlayerHandSize(this);
+        int handSize = currentState.getPlayerHandSize(this.name);
         
         for (int i = 0; i < handSize; i++) {
             CardKnowledge knowledge = myCardKnowledge.get(i);
@@ -265,94 +309,12 @@ public class SimpleAIPlayer implements Player {
             }
         }
         
-        // Check if all cards of this rank are already played/discarded
-        if (areAllCardsOfRankPlayed(rank)) {
-            return true;
-        }
-        
         return false;
     }
     
-    private boolean areAllCardsOfRankPlayed(int rank) {
-        Map<Card.Suit, List<Card>> playedCards = currentState.getPlayedCards();
-        List<Card> discardPile = currentState.getDiscardPile();
-        
-        int cardsNeeded = getCardsNeededForRank(rank);
-        int cardsFound = 0;
-        
-        // Count played cards of this rank
-        for (List<Card> suitCards : playedCards.values()) {
-            for (Card playedCard : suitCards) {
-                if (playedCard.getRank() == rank) {
-                    cardsFound++;
-                }
-            }
-        }
-        
-        // Count discarded cards of this rank
-        for (Card discardedCard : discardPile) {
-            if (discardedCard.getRank() == rank) {
-                cardsFound++;
-            }
-        }
-        
-        return cardsFound >= cardsNeeded;
-    }
-    
-    private int getCardsNeededForRank(int rank) {
-        return switch (rank) {
-            case 1 -> 3;
-            case 2, 3, 4 -> 2;
-            case 5 -> 1;
-            default -> 0;
-        };
-    }
-    
-    private List<Player> getOtherPlayers() {
+    private List<String> getOtherPlayers() {
         return currentState.getPlayers().stream()
                 .filter(p -> !p.equals(this))
                 .collect(Collectors.toList());
-    }
-    
-    @Override
-    public void receiveClue(Clue clue) {
-        for (int i=0;i<currentState.getPlayerHandSize(this);i++) {
-            if (clue.getCardIndices().contains(i)) {
-                myCardKnowledge.get(i).applyClue(clue);
-            }else {
-                myCardKnowledge.get(i).applyNegativeClue(clue);
-            }
-        }
-    }
-    
-    @Override
-    public void notifyPlayerAction(String playerName, Action action) {
-        // Track when clues are given to other players
-        action.accept(new Action.ActionVisitor<Void>() {
-            @Override
-            public Void visit(GiveInfoAction giveInfoAction) {
-                Player targetPlayer = giveInfoAction.getTargetPlayer();
-                if (!targetPlayer.equals(SimpleAIPlayer.this)) {
-                    // Update our tracking of this player's knowledge
-                    updateOtherPlayerKnowledge(targetPlayer, giveInfoAction);
-                }
-                return null;
-            }
-            
-            @Override
-            public Void visit(PlayCardAction playCardAction) {
-                return null;
-            }
-            
-            @Override
-            public Void visit(DiscardCardAction discardCardAction) {
-                return null;
-            }
-        });
-    }
-    
-    @Override
-    public void notifyGameEnd(int score, boolean won) {
-        System.out.println(name + " - Game ended! Score: " + score + ", Won: " + won);
     }
 }
