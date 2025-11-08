@@ -49,7 +49,7 @@ public class GameEngine {
             gameState = GameState.builder()
                 .hands(updatedHands)
                 .playedCards(gameState.getPlayedCards())
-                .discardPile(gameState.getDiscardPile())
+                .discardedCards(gameState.getDiscardedCards())
                 .infoTokens(gameState.getInfoTokens())
                 .fuseTokens(gameState.getFuseTokens())
                 .currentPlayerIndex(currentPlayerIndex)
@@ -153,7 +153,7 @@ public class GameEngine {
         return GameState.builder()
             .hands(gameState.getHands())
             .playedCards(gameState.getPlayedCards())
-            .discardPile(gameState.getDiscardPile())
+            .discardedCards(gameState.getDiscardedCards())
             .infoTokens(gameState.getInfoTokens() - 1)
             .fuseTokens(gameState.getFuseTokens())
             .currentPlayerIndex(currentPlayerIndex)
@@ -172,6 +172,7 @@ public class GameEngine {
         updatedHands.put(currentPlayer, hand);
         
         Map<Card.Suit, List<Card>> playedCards = new HashMap<>(gameState.getPlayedCards());
+        Map<Card.Suit, List<Card>> discardedCards = new HashMap<>(gameState.getDiscardedCards());
         List<Card> suitCards = new ArrayList<>(playedCards.get(playedCard.getSuit()));
         
         boolean playSuccessful = false;
@@ -188,12 +189,11 @@ public class GameEngine {
         
         playedCards.put(playedCard.getSuit(), suitCards);
         
-        List<Card> discardPile = new ArrayList<>(gameState.getDiscardPile());
         int infoTokens = gameState.getInfoTokens();
         int fuseTokens = gameState.getFuseTokens();
         
         if (!playSuccessful) {
-            discardPile.add(playedCard);
+            discardedCards.get(playedCard.getSuit()).add(playedCard);
             fuseTokens--;
         } else if (playedCard.getRank() == 5) {
             infoTokens = Math.min(infoTokens + 1, 8);
@@ -213,7 +213,7 @@ public class GameEngine {
         return GameState.builder()
             .hands(updatedHands)
             .playedCards(playedCards)
-            .discardPile(discardPile)
+            .discardedCards(discardedCards)
             .infoTokens(infoTokens)
             .fuseTokens(fuseTokens)
             .currentPlayerIndex(currentPlayerIndex)
@@ -226,13 +226,13 @@ public class GameEngine {
     private GameState handleDiscardCardAction(DiscardCardAction action) {
         Player currentPlayer = players.get(currentPlayerIndex);
         List<Card> hand = new ArrayList<>(gameState.getPlayerHand(currentPlayer));
+        Map<Card.Suit, List<Card>> discardedCards = new HashMap<>(gameState.getDiscardedCards());
         Card discardedCard = hand.remove(action.getHandIndex());
         
         Map<Player, List<Card>> updatedHands = new HashMap<>(gameState.getHands());
         updatedHands.put(currentPlayer, hand);
         
-        List<Card> discardPile = new ArrayList<>(gameState.getDiscardPile());
-        discardPile.add(discardedCard);
+        discardedCards.get(discardedCard.getSuit()).add(discardedCard);
         
         int finalPlayerIndex = gameState.getFinalPlayerIndex();
         
@@ -249,7 +249,7 @@ public class GameEngine {
         return GameState.builder()
             .hands(updatedHands)
             .playedCards(gameState.getPlayedCards())
-            .discardPile(discardPile)
+            .discardedCards(discardedCards)
             .infoTokens(infoTokens)
             .fuseTokens(gameState.getFuseTokens())
             .currentPlayerIndex(currentPlayerIndex)

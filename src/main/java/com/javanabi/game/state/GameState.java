@@ -8,7 +8,7 @@ import java.util.*;
 public final class GameState {
     private final Map<Player, List<Card>> hands;
     private final Map<Card.Suit, List<Card>> playedCards;
-    private final List<Card> discardPile;
+    private final Map<Card.Suit, List<Card>> discardedCards;
     private final int infoTokens;
     private final int fuseTokens;
     private final int currentPlayerIndex;
@@ -19,7 +19,7 @@ public final class GameState {
     private GameState(Builder builder) {
         this.hands = Collections.unmodifiableMap(new HashMap<>(builder.hands));
         this.playedCards = Collections.unmodifiableMap(new HashMap<>(builder.playedCards));
-        this.discardPile = Collections.unmodifiableList(new ArrayList<>(builder.discardPile));
+        this.discardedCards = Collections.unmodifiableMap(new HashMap<>(builder.discardedCards));
         this.infoTokens = builder.infoTokens;
         this.fuseTokens = builder.fuseTokens;
         this.currentPlayerIndex = builder.currentPlayerIndex;
@@ -47,9 +47,32 @@ public final class GameState {
         
         for (Card.Suit suit : Card.Suit.values()) {
             builder.playedCards.put(suit, new ArrayList<>());
+            builder.discardedCards.put(suit, new ArrayList<>());
         }
         
         return builder.build();
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Cards in Deck:" + deckSize + "\n");
+        sb.append("Cards Played:\n");
+        for (Card.Suit s:Card.Suit.values()) {
+            int size = playedCards.get(s).size();
+            if (size > 0) {
+                sb.append("\t" + s + " " + size + "\n");
+            }
+        }
+        sb.append("Cards Discarded:\n");
+        //separate into suits
+        for (Card.Suit s:Card.Suit.values()) {
+            sb.append("\t" + s + ":");
+            for (Card c: discardedCards.get(s)) {
+                sb.append(" " + c.getRank());
+            }
+            sb.append("\n");
+        }
+        return sb.toString();
     }
     
     public Map<Player, List<Card>> getHands() {
@@ -81,7 +104,7 @@ public final class GameState {
             .currentPlayerIndex(currentPlayerIndex)
             .hands(Collections.unmodifiableMap(filteredHands))
             .playedCards(playedCards)
-            .discardPile(discardPile)
+            .discardedCards(discardedCards)
             .infoTokens(infoTokens)
             .fuseTokens(fuseTokens)
             .finalPlayerIndex(finalPlayerIndex)
@@ -92,7 +115,11 @@ public final class GameState {
     public Map<Card.Suit, List<Card>> getPlayedCards() {
         return playedCards;
     }
-    
+
+    public Map<Card.Suit, List<Card>> getDiscardedCards() {
+        return discardedCards;
+    }
+
     public List<Card> getPlayableCards() {
         List<Card>ret = new ArrayList<Card>();
         for (Card.Suit s :Card.Suit.values()) {
@@ -102,9 +129,6 @@ public final class GameState {
         return ret;
     }
 
-    public List<Card> getDiscardPile() {
-        return discardPile;
-    }
     
     public int getInfoTokens() {
         return infoTokens;
@@ -161,7 +185,7 @@ public final class GameState {
     public static class Builder {
         private Map<Player, List<Card>> hands = new HashMap<>();
         private Map<Card.Suit, List<Card>> playedCards = new HashMap<>();
-        private List<Card> discardPile = new ArrayList<>();
+        private Map<Card.Suit, List<Card>> discardedCards = new HashMap<>();
         private int infoTokens = 8;
         private int fuseTokens = 3;
         private int currentPlayerIndex = 0;
@@ -178,9 +202,9 @@ public final class GameState {
             this.playedCards = playedCards;
             return this;
         }
-        
-        public Builder discardPile(List<Card> discardPile) {
-            this.discardPile = discardPile;
+
+        public Builder discardedCards(Map<Card.Suit, List<Card>> discardedCards) {
+            this.discardedCards = discardedCards;
             return this;
         }
         
