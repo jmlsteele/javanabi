@@ -170,38 +170,26 @@ public class GameEngine {
         Player currentPlayer = players.get(currentPlayerIndex);
         List<Card> hand = new ArrayList<>(gameState.getPlayerHand(currentPlayer.getName()));
         Card playedCard = hand.remove(action.getHandIndex());
-        
-        Map<String, List<Card>> updatedHands = new HashMap<>(gameState.getHands());
-        updatedHands.put(currentPlayer.getName(), hand);
-        
         Map<Card.Suit, List<Card>> playedCards = new HashMap<>(gameState.getPlayedCards());
         Map<Card.Suit, List<Card>> discardedCards = new HashMap<>(gameState.getDiscardedCards());
         List<Card> suitCards = new ArrayList<>(playedCards.get(playedCard.getSuit()));
         
-        boolean playSuccessful = false;
-        if (suitCards.isEmpty() && playedCard.getRank() == 1) {
-            suitCards.add(playedCard);
-            playSuccessful = true;
-        } else if (!suitCards.isEmpty()) {
-            Card lastPlayed = suitCards.get(suitCards.size() - 1);
-            if (lastPlayed.getRank() == playedCard.getRank() - 1) {
-                suitCards.add(playedCard);
-                playSuccessful = true;
-            }
-        }
-        
-        playedCards.put(playedCard.getSuit(), suitCards);
-        
         int infoTokens = gameState.getInfoTokens();
         int fuseTokens = gameState.getFuseTokens();
-        
-        if (!playSuccessful) {
+
+        if (playedCard.getRank() == suitCards.size() + 1) {
+            suitCards.add(playedCard);
+            if (playedCard.getRank() == 5) {
+                infoTokens = Math.min(infoTokens + 1, 8);
+            }            
+        } else {
             discardedCards.get(playedCard.getSuit()).add(playedCard);
             fuseTokens--;
-        } else if (playedCard.getRank() == 5) {
-            infoTokens = Math.min(infoTokens + 1, 8);
         }
 
+        playedCards.put(playedCard.getSuit(), suitCards);
+        
+        
         int finalPlayerIndex = gameState.getFinalPlayerIndex();
         
         Card drawnCard = deck.drawCard();
@@ -209,9 +197,10 @@ public class GameEngine {
             if (finalPlayerIndex == -1) finalPlayerIndex = currentPlayerIndex;
         } else {
             hand.add(drawnCard);
-            updatedHands.put(currentPlayer.getName(), hand);
             currentPlayer.drawCard();
         }
+        Map<String, List<Card>> updatedHands = new HashMap<>(gameState.getHands());
+        updatedHands.put(currentPlayer.getName(), hand);
         
         return GameState.builder()
             .hands(updatedHands)
