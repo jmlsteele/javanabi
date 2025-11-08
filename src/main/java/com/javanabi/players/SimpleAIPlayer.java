@@ -1,6 +1,7 @@
 package com.javanabi.players;
 
 import com.javanabi.domain.Card;
+import com.javanabi.game.Deck;
 import com.javanabi.game.Player;
 import com.javanabi.game.action.*;
 import com.javanabi.game.state.GameState;
@@ -12,13 +13,13 @@ import java.util.stream.Collectors;
 public class SimpleAIPlayer implements Player {
     private final String name;
     private GameState currentState;
-    private List<CardKnowledge> myCardKnowledge;
-    private Map<String, List<CardKnowledge>> otherPlayersKnowledge;
+    private Map<String, List<CardKnowledge>> playerCardKnowledge;
+    private List<Card> remainingCards;
     
     public SimpleAIPlayer(String name) {
         this.name = name;
-        this.myCardKnowledge = new ArrayList<>();
-        this.otherPlayersKnowledge = new HashMap<>();
+        this.playerCardKnowledge = new HashMap<>();
+        this.remainingCards = new Deck().getRemainingCards();
     }
     
     @Override
@@ -30,36 +31,30 @@ public class SimpleAIPlayer implements Player {
     public void initialize(GameState initialState) {
         System.out.println(initialState);
         this.currentState = initialState;
-        // Initialize my own knowledge
-        int handSize = currentState.getPlayerHandSize(this.name);
-        myCardKnowledge.clear();
-        for (int i = 0; i < handSize; i++) {
-            myCardKnowledge.add(new CardKnowledge());
-        }
         
-        // Initialize knowledge tracking for other players
-        otherPlayersKnowledge.clear();
+        // Initialize knowledge tracking for all players
+        playerCardKnowledge.clear();
         for (String player : currentState.getPlayers()) {
-            if (!player.equals(this)) {
-                int playerHandSize = currentState.getPlayerHandSize(player);
-                List<CardKnowledge> playerKnowledge = new ArrayList<>();
-                for (int i = 0; i < playerHandSize; i++) {
-                    playerKnowledge.add(new CardKnowledge());
-                }
-                otherPlayersKnowledge.put(player, playerKnowledge);
+            int playerHandSize = currentState.getPlayerHandSize(player);
+            List<CardKnowledge> playerKnowledge = new ArrayList<>();
+            for (int i = 0; i < playerHandSize; i++) {
+                playerKnowledge.add(new CardKnowledge());
             }
+            playerCardKnowledge.put(player, playerKnowledge);
         }
     }
     
     @Override
     public Action takeTurn(GameState currentState) {
         this.currentState = currentState;
+        System.out.println(currentState);
         
         // Priority 1: Play 100% certain card
         Optional<Integer> playableCard = findCertainPlayableCard();
         if (playableCard.isPresent()) {
             int cardIndex = playableCard.get();
-            myCardKnowledge.remove(cardIndex);
+            CardKnowledge playing =  playerCardKnowledge.get(this.name).get(cardIndex);
+            System.out.println(playing);
             return new PlayCardAction(cardIndex);
         }
         
@@ -75,13 +70,14 @@ public class SimpleAIPlayer implements Player {
         Optional<Integer> uselessCard = findUselessCard();
         if (uselessCard.isPresent()) {
             int cardIndex = uselessCard.get();
-            myCardKnowledge.remove(cardIndex);
+            CardKnowledge discarding = playerCardKnowledge.get(this.name).get(cardIndex);
+            System.out.println(discarding);
             return new DiscardCardAction(cardIndex);
         }
         
         // Priority 4: Discard oldest card
-        System.out.println(myCardKnowledge.size());
-        myCardKnowledge.remove(0);
+        CardKnowledge discarding = playerCardKnowledge.get(this.name).get(0);
+        System.out.println(discarding);
         return new DiscardCardAction(0);
     }
     
@@ -89,21 +85,15 @@ public class SimpleAIPlayer implements Player {
     public void receiveClue(Clue clue) {
         for (int i=0;i<currentState.getPlayerHandSize(this.name);i++) {
             if (clue.getCardIndices().contains(i)) {
-                myCardKnowledge.get(i).applyClue(clue);
+                playerCardKnowledge.get(this.name).get(i).applyClue(clue);
             }else {
-                myCardKnowledge.get(i).applyNegativeClue(clue);
+                playerCardKnowledge.get(this.name).get(i).applyNegativeClue(clue);
             }
         }
     }
 
     @Override
-    public void drawCard() {
-        myCardKnowledge.add(new CardKnowledge());
-    }
-
-    @Override
     public void notifyPlayerAction(String playerName, Action action) {
-        // Track when clues are given to other players
         action.accept(new Action.ActionVisitor<Void>() {
             @Override
             public Void visit(GiveInfoAction giveInfoAction) {
@@ -117,14 +107,24 @@ public class SimpleAIPlayer implements Player {
             
             @Override
             public Void visit(PlayCardAction playCardAction) {
-                playCardAction.getHandIndex();
+                SimpleAIPlayer.this.remainingCards.remove(playCardAction.getCard());
+                playerCardKnowledge.get(playerName).remove(playCardAction.getHandIndex());
                 return null;
             }
             
             @Override
             public Void visit(DiscardCardAction discardCardAction) {
+                SimpleAIPlayer.this.remainingCards.remove(discardCardAction.getCard());
+                playerCardKnowledge.get(playerName).remove(discardCardAction.getHandIndex());
                 return null;
             }
+
+            @Override
+            public Void visit(DrawCardAction drawCardAction) {
+                playerCardKnowledge.get(playerName).add(new CardKnowledge());
+                return null;
+            }
+
         });
     }
     
@@ -134,11 +134,11 @@ public class SimpleAIPlayer implements Player {
     }
 
     private void updateOtherPlayerKnowledge(String targetPlayer, GiveInfoAction giveInfoAction) {
-        List<CardKnowledge> playerKnowledge = otherPlayersKnowledge.get(targetPlayer);
+        List<CardKnowledge> playerKnowledge = playerCardKnowledge.get(targetPlayer);
         if (playerKnowledge == null) {
             // Initialize knowledge for this player if not already tracked
             playerKnowledge = new ArrayList<>();
-            otherPlayersKnowledge.put(targetPlayer, playerKnowledge);
+            playerCardKnowledge.put(targetPlayer, playerKnowledge);
         }
         
         // Calculate which cards match the clue (same logic as GameEngine)
@@ -179,7 +179,7 @@ public class SimpleAIPlayer implements Player {
         int handSize = currentState.getPlayerHandSize(this.name);
         
         for (int i = 0; i < handSize; i++) {
-            CardKnowledge knowledge = myCardKnowledge.get(i);
+            CardKnowledge knowledge = playerCardKnowledge.get(this.name).get(i);
             
             if (isCardCertainPlayable(knowledge)) {
                 return Optional.of(i);
@@ -216,7 +216,7 @@ public class SimpleAIPlayer implements Player {
         
         for (String targetPlayer : otherPlayers) {
             List<Card> targetHand = currentState.getPlayerHand(targetPlayer);
-            List<CardKnowledge> targetKnowledge = otherPlayersKnowledge.get(targetPlayer);
+            List<CardKnowledge> targetKnowledge = playerCardKnowledge.get(targetPlayer);
             
             if (targetKnowledge == null) continue;
             
@@ -280,7 +280,7 @@ public class SimpleAIPlayer implements Player {
         int handSize = currentState.getPlayerHandSize(this.name);
         
         for (int i = 0; i < handSize; i++) {
-            CardKnowledge knowledge = myCardKnowledge.get(i);
+            CardKnowledge knowledge = playerCardKnowledge.get(this.name).get(i);
             
             if (isCardUseless(knowledge)) {
                 return Optional.of(i);

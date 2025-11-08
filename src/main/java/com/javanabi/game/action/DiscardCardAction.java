@@ -1,8 +1,10 @@
 package com.javanabi.game.action;
 
+import com.javanabi.domain.Card;
+
 public final class DiscardCardAction implements Action {
     private final int handIndex;
-    
+    private Card card;
     public DiscardCardAction(int handIndex) {
         if (handIndex < 0) {
             throw new IllegalArgumentException("Hand index cannot be negative");
@@ -14,6 +16,14 @@ public final class DiscardCardAction implements Action {
         return handIndex;
     }
     
+    public void setCard(Card card) {
+        this.card=card;
+    }
+
+    public Card getCard() {
+        return this.card;
+    }
+
     @Override
     public <T> T accept(ActionVisitor<T> visitor) {
         return visitor.visit(this);

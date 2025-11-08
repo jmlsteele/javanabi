@@ -4,6 +4,7 @@ import com.javanabi.game.GameEngine;
 import com.javanabi.game.Player;
 import com.javanabi.game.action.Action;
 import com.javanabi.game.action.DiscardCardAction;
+import com.javanabi.game.action.DrawCardAction;
 import com.javanabi.game.action.GiveInfoAction;
 import com.javanabi.game.action.PlayCardAction;
 
@@ -103,6 +104,11 @@ public class HanabiServer {
             @Override
             public String visit(DiscardCardAction discardCardAction) {
                 return "Discard card at position " + (discardCardAction.getHandIndex() + 1);
+            }
+
+            @Override
+            public String visit(DrawCardAction drawCardAction) {
+                return "Drew a card";
             }
         });
     }

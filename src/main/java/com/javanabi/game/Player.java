@@ -14,8 +14,6 @@ public interface Player {
     
     void receiveClue(Clue clue);
 
-    void drawCard();
-    
     void notifyPlayerAction(String playerName, Action action);
     
     void notifyGameEnd(int score, boolean won);

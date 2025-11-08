@@ -3,6 +3,7 @@ package com.javanabi.game;
 import com.javanabi.domain.Card;
 import com.javanabi.game.action.Action;
 import com.javanabi.game.action.DiscardCardAction;
+import com.javanabi.game.action.DrawCardAction;
 import com.javanabi.game.action.GiveInfoAction;
 import com.javanabi.game.action.PlayCardAction;
 import com.javanabi.game.state.GameState;
@@ -85,12 +86,20 @@ public class GameEngine {
             
             @Override
             public GameState visit(PlayCardAction playCardAction) {
+                playCardAction.setCard(GameEngine.this.gameState.getPlayerHand(currentPlayer.getName()).get(playCardAction.getHandIndex()));
                 return handlePlayCardAction(playCardAction);
             }
             
             @Override
             public GameState visit(DiscardCardAction discardCardAction) {
+                discardCardAction.setCard(GameEngine.this.gameState.getPlayerHand(currentPlayer.getName()).get(discardCardAction.getHandIndex()));
                 return handleDiscardCardAction(discardCardAction);
+            }
+
+            @Override
+            public GameState visit(DrawCardAction giveInfoAction) {
+                //this doesn't get used here
+                throw new UnsupportedOperationException("Unimplemented method 'visit'");
             }
         };
         
@@ -120,6 +129,12 @@ public class GameEngine {
             public Boolean visit(DiscardCardAction discardCardAction) {
                 List<Card> hand = gameState.getPlayerHand(currentPlayer.getName());
                 return discardCardAction.getHandIndex() < hand.size();
+            }
+
+            @Override
+            public Boolean visit(DrawCardAction giveInfoAction) {
+                //this doesn't get used here
+                throw new UnsupportedOperationException("Unimplemented method 'visit'");
             }
         });
     }
@@ -197,7 +212,7 @@ public class GameEngine {
             if (finalPlayerIndex == -1) finalPlayerIndex = currentPlayerIndex;
         } else {
             hand.add(drawnCard);
-            currentPlayer.drawCard();
+            notifyPlayerAction(currentPlayer, new DrawCardAction());
         }
         Map<String, List<Card>> updatedHands = new HashMap<>(gameState.getHands());
         updatedHands.put(currentPlayer.getName(), hand);
@@ -234,7 +249,7 @@ public class GameEngine {
         } else {
             hand.add(drawnCard);
             updatedHands.put(currentPlayer.getName(), hand);
-            currentPlayer.drawCard();
+            notifyPlayerAction(currentPlayer, new DrawCardAction());
         }
         int infoTokens = Math.min(gameState.getInfoTokens() + 1, 8);
 

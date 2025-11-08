@@ -24,7 +24,7 @@ public class AlwaysPlaysPlayer implements Player {
 
     @Override
     public Action takeTurn(GameState currentState) {
-        System.out.println(name + " is playing Card 0 ");
+        System.out.println(name + " is playing Card 1");
         return new PlayCardAction(0);
     }
     
