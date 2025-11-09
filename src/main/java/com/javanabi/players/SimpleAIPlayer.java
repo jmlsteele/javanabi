@@ -83,6 +83,10 @@ public class SimpleAIPlayer implements Player {
     
     @Override
     public void receiveClue(Clue clue) {
+        updateKnowledge(name, clue);
+    }
+
+    private void updateKnowledge(String player, Clue clue) {
         for (int i=0;i<currentState.getPlayerHandSize(this.name);i++) {
             if (clue.getCardIndices().contains(i)) {
                 playerCardKnowledge.get(this.name).get(i).applyClue(clue);
@@ -92,16 +96,13 @@ public class SimpleAIPlayer implements Player {
         }
     }
 
+
     @Override
     public void notifyPlayerAction(String playerName, Action action) {
         action.accept(new Action.ActionVisitor<Void>() {
             @Override
             public Void visit(GiveInfoAction giveInfoAction) {
-                String targetPlayer = giveInfoAction.getTargetPlayer();
-                if (!targetPlayer.equals(SimpleAIPlayer.this.name)) {
-                    // Update our tracking of this player's knowledge
-                    updateOtherPlayerKnowledge(targetPlayer, giveInfoAction);
-                }
+                updateKnowledge(giveInfoAction.getTargetPlayer(),giveInfoAction.getClue());
                 return null;
             }
             
@@ -133,59 +134,15 @@ public class SimpleAIPlayer implements Player {
         System.out.println(name + " - Game ended! Score: " + score + ", Won: " + won);
     }
 
-    private void updateOtherPlayerKnowledge(String targetPlayer, GiveInfoAction giveInfoAction) {
-        List<CardKnowledge> playerKnowledge = playerCardKnowledge.get(targetPlayer);
-        if (playerKnowledge == null) {
-            // Initialize knowledge for this player if not already tracked
-            playerKnowledge = new ArrayList<>();
-            playerCardKnowledge.put(targetPlayer, playerKnowledge);
-        }
-        
-        // Calculate which cards match the clue (same logic as GameEngine)
-        List<Card> targetHand = currentState.getPlayerHand(targetPlayer);
-        List<Integer> matchingIndices = new ArrayList<>();
-        
-        for (int i = 0; i < targetHand.size(); i++) {
-            Card card = targetHand.get(i);
-            boolean matches = false;
-            
-            if (giveInfoAction.getClueType() == Player.ClueType.SUIT) {
-                matches = card.getSuit().equals(giveInfoAction.getClueValue());
-            } else if (giveInfoAction.getClueType() == Player.ClueType.RANK) {
-                matches = card.getRank() == (Integer) giveInfoAction.getClueValue();
-            }
-            
-            if (matches) {
-                matchingIndices.add(i);
-            }
-        }
-        
-        // Create clue object
-        Player.Clue clue = new Player.Clue(
-            giveInfoAction.getClueType(),
-            giveInfoAction.getClueValue(),
-            matchingIndices
-        );
-        
-        // Update knowledge for cards that match the clue
-        for (int index : clue.getCardIndices()) {
-            if (index < playerKnowledge.size()) {
-                playerKnowledge.get(index).applyClue(clue);
-            }
-        }
-    }
-    
     private Optional<Integer> findCertainPlayableCard() {
         int handSize = currentState.getPlayerHandSize(this.name);
         
         for (int i = 0; i < handSize; i++) {
             CardKnowledge knowledge = playerCardKnowledge.get(this.name).get(i);
-            
             if (isCardCertainPlayable(knowledge)) {
                 return Optional.of(i);
             }
         }
-        
         return Optional.empty();
     }
     
@@ -219,7 +176,8 @@ public class SimpleAIPlayer implements Player {
             List<CardKnowledge> targetKnowledge = playerCardKnowledge.get(targetPlayer);
             
             if (targetKnowledge == null) continue;
-            
+            List<GiveInfoAction> hints = new ArrayList<>();
+
             for (int i = 0; i < targetHand.size(); i++) {
                 Card card = targetHand.get(i);
                 CardKnowledge knowledge = targetKnowledge.get(i);
@@ -228,22 +186,23 @@ public class SimpleAIPlayer implements Player {
                     // Check if this player doesn't already know this card well enough
                     if (!isCardCertainPlayable(knowledge)) {
                         // Check if we can make this card 100% certain with a hint
-                        Optional<GiveInfoAction> hint = createHintForCard(targetPlayer, i, card, knowledge);
-                        if (hint.isPresent()) {
-                            return hint;
-                        }
+                        hints.addAll(createHintForCard(targetPlayer, i, card, knowledge));
                     }
                 }
             }
+            if (hints.isEmpty()) return Optional.empty();
+            System.out.println(hints);
+            //TODO now go through the hints and see which one would be best
+            return Optional.of(hints.get(0));
         }
         
         return Optional.empty();
     }
     
-    private Optional<GiveInfoAction> createHintForCard(String targetPlayer, int cardIndex, Card card, CardKnowledge currentKnowledge) {
+    private List<GiveInfoAction> createHintForCard(String targetPlayer, int cardIndex, Card card, CardKnowledge currentKnowledge) {
         List<Card> targetHand = currentState.getPlayerHand(targetPlayer);
         List<Integer> matchingIndices = new ArrayList<>();
-        
+        List<GiveInfoAction> hints = new ArrayList<>();
         // Try suit hint if player doesn't already know the suit
         if (!currentKnowledge.isKnownSuit()) {
             for (int i = 0; i < targetHand.size(); i++) {
@@ -254,7 +213,7 @@ public class SimpleAIPlayer implements Player {
             
             if (matchingIndices.size() == 1) {
                 // Single card of this suit - this would make it 100% certain for suit
-                return Optional.of(new GiveInfoAction(targetPlayer, ClueType.SUIT, card.getSuit()));
+                hints.add(new GiveInfoAction(targetPlayer,new Clue(ClueType.SUIT, card.getSuit(), matchingIndices)));
             }
         }
         
@@ -269,11 +228,11 @@ public class SimpleAIPlayer implements Player {
             
             if (matchingIndices.size() == 1) {
                 // Single card of this rank - this would make it 100% certain for rank
-                return Optional.of(new GiveInfoAction(targetPlayer, ClueType.RANK, card.getRank()));
+                hints.add(new GiveInfoAction(targetPlayer,new Clue(ClueType.RANK, card.getRank(), matchingIndices)));
             }
         }
         
-        return Optional.empty();
+        return hints;
     }
     
     private Optional<Integer> findUselessCard() {

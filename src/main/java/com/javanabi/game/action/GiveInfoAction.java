@@ -1,32 +1,29 @@
 package com.javanabi.game.action;
 
-import com.javanabi.game.Player;
+import com.javanabi.game.Player.Clue;
 
 public final class GiveInfoAction implements Action {
     private final String targetPlayer;
-    private final Player.ClueType clueType;
-    private final Object clueValue;
+    private final Clue clue;
     
-    public GiveInfoAction(String targetPlayer, Player.ClueType clueType, Object clueValue) {
+    public GiveInfoAction(String targetPlayer, Clue clue) {
         this.targetPlayer = targetPlayer;
-        this.clueType = clueType;
-        this.clueValue = clueValue;
+        this.clue = clue;
     }
     
     public String getTargetPlayer() {
         return targetPlayer;
     }
     
-    public Player.ClueType getClueType() {
-        return clueType;
-    }
-    
-    public Object getClueValue() {
-        return clueValue;
+    public Clue getClue() {
+        return clue;
     }
     
     @Override
     public <T> T accept(ActionVisitor<T> visitor) {
         return visitor.visit(this);
+    }
+    public String toString() {
+        return this.targetPlayer + ": " + this.clue;
     }
 }

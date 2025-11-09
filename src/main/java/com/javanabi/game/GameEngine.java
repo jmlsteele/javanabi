@@ -145,24 +145,22 @@ public class GameEngine {
         List<Card> targetHand = gameState.getPlayerHand(targetPlayerName);
         List<Integer> matchingIndices = new ArrayList<>();
         
+        //even though the GiveInfoAction has the indicies in them the player could lie
+        //so we generate our own indicies
+        Player.Clue actionClue = action.getClue();
         for (int i = 0; i < targetHand.size(); i++) {
             Card card = targetHand.get(i);
-            boolean matches = false;
             
-            if (action.getClueType() == Player.ClueType.SUIT) {
-                matches = card.getSuit().equals(action.getClueValue());
-            } else if (action.getClueType() == Player.ClueType.RANK) {
-                matches = card.getRank() == (Integer) action.getClueValue();
-            }
-            
-            if (matches) {
+            if (actionClue.getType() == Player.ClueType.SUIT && card.getSuit().equals(actionClue.getValue())) {
+                matchingIndices.add(i);
+            } else if (actionClue.getType() == Player.ClueType.RANK && card.getRank() == (Integer) actionClue.getValue()){
                 matchingIndices.add(i);
             }
         }
         
         Player.Clue clue = new Player.Clue(
-            action.getClueType(),
-            action.getClueValue(),
+            action.getClue().getType(),
+            action.getClue().getValue(),
             matchingIndices
         );
         

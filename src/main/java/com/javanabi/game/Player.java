@@ -36,5 +36,8 @@ public interface Player {
         public ClueType getType() { return type; }
         public Object getValue() { return value; }
         public List<Integer> getCardIndices() { return cardIndices; }
+        public String toString() {
+            return this.type + ":" + this.value;
+        }
     }
 }
