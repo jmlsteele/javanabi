@@ -24,8 +24,8 @@ public class KnowledgeTrackingTest {
         GameState trackerView = game.getPlayerGameState(trackerAI);
         
         System.out.println("Initial setup:");
-        System.out.println("  Tracker hand size: " + trackerView.getPlayerHandSize(trackerAI));
-        System.out.println("  Target hand size: " + trackerView.getPlayerHandSize(targetAI));
+        System.out.println("  Tracker hand size: " + trackerView.getPlayerHandSize(trackerAI.getName()));
+        System.out.println("  Target hand size: " + trackerView.getPlayerHandSize(targetAI.getName()));
         
         // Simulate a few turns to see knowledge tracking
         System.out.println("\nSimulating turns...");

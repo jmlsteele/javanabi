@@ -25,7 +25,7 @@ public class MultiplayerSecurityTest {
             GameState playerView = game.getPlayerGameState(testPlayer);
             
             // Check own hand (should be hidden)
-            List<?> ownHand = playerView.getPlayerHand(testPlayer);
+            List<?> ownHand = playerView.getPlayerHand(testPlayer.getName());
             boolean ownHandHidden = ownHand.stream().allMatch(card -> card == null);
             System.out.println("  Own hand hidden: " + (ownHandHidden ? "✅" : "❌"));
             
@@ -33,7 +33,7 @@ public class MultiplayerSecurityTest {
             boolean otherHandsVisible = true;
             for (Player otherPlayer : players) {
                 if (!otherPlayer.equals(testPlayer)) {
-                    List<?> otherHand = playerView.getPlayerHand(otherPlayer);
+                    List<?> otherHand = playerView.getPlayerHand(otherPlayer.getName());
                     if (otherHand.stream().anyMatch(card -> card == null)) {
                         otherHandsVisible = false;
                         break;

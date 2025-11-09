@@ -3,6 +3,7 @@ package com.javanabi.game;
 import com.javanabi.domain.Card;
 import com.javanabi.game.action.*;
 import com.javanabi.game.state.GameState;
+import com.javanabi.players.AlwaysPlaysPlayer;
 import com.javanabi.players.SimpleAIPlayer;
 
 import java.util.*;
@@ -40,23 +41,21 @@ public class SimpleAITest {
         
         // Set up AI hand with a known 1
         List<Card> aiHand = Arrays.asList(new Card(Card.Suit.BLUE, 1));
-        Map<Player, List<Card>> hands = new HashMap<>();
-        hands.put(ai, aiHand);
+        Map<String, List<Card>> hands = new HashMap<>();
+        hands.put(ai.getName(), aiHand);
         stateBuilder.hands(hands);
         
         // Set up other players
-        List<Player> players = Arrays.asList(ai, new SimpleTestPlayer("Other"));
+        List<String> players = Arrays.asList(ai.getName(), new AlwaysPlaysPlayer("Other").getName());
         stateBuilder.players(players);
         stateBuilder.currentPlayerIndex(0);
         stateBuilder.infoTokens(8);
         stateBuilder.fuseTokens(3);
         
         GameState testState = stateBuilder.build();
-        ai.initialize(testState);
-        
         // Manually set card knowledge to make the card 100% certain
-        ai.receiveClue(new Player.Clue(Player.ClueType.SUIT, Card.Suit.BLUE, new int[]{0}));
-        ai.receiveClue(new Player.Clue(Player.ClueType.RANK, 1, new int[]{0}));
+        ai.receiveClue(new Player.Clue(Player.ClueType.SUIT, Card.Suit.BLUE, Arrays.asList(0)));
+        ai.receiveClue(new Player.Clue(Player.ClueType.RANK, 1, Arrays.asList(0)));
         
         Action action = ai.takeTurn(testState);
         
@@ -71,7 +70,7 @@ public class SimpleAITest {
         System.out.println("\n=== Test 2: Useful Hint ===");
         
         SimpleAIPlayer ai = new SimpleAIPlayer("TestAI");
-        SimpleTestPlayer other = new SimpleTestPlayer("Other");
+        AlwaysPlaysPlayer other = new AlwaysPlaysPlayer("Other");
         
         // Create game state where other player has a playable card
         GameState.Builder stateBuilder = GameState.builder();
@@ -87,12 +86,12 @@ public class SimpleAITest {
         // Other player has a 1 that could be played
         List<Card> otherHand = Arrays.asList(new Card(Card.Suit.BLUE, 1));
         
-        Map<Player, List<Card>> hands = new HashMap<>();
-        hands.put(ai, aiHand);
-        hands.put(other, otherHand);
+        Map<String, List<Card>> hands = new HashMap<>();
+        hands.put(ai.getName(), aiHand);
+        hands.put(other.getName(), otherHand);
         stateBuilder.hands(hands);
         
-        List<Player> players = Arrays.asList(ai, other);
+        List<String> players = Arrays.asList(ai.getName(), other.getName());
         stateBuilder.players(players);
         stateBuilder.currentPlayerIndex(0);
         stateBuilder.infoTokens(8);
@@ -114,7 +113,7 @@ public class SimpleAITest {
         System.out.println("\n=== Test 3: Useless Card Discard ===");
         
         SimpleAIPlayer ai = new SimpleAIPlayer("TestAI");
-        SimpleTestPlayer other = new SimpleTestPlayer("Other");
+        AlwaysPlaysPlayer other = new AlwaysPlaysPlayer("Other");
         
         // Create game state where AI has a useless card
         GameState.Builder stateBuilder = GameState.builder();
@@ -131,12 +130,12 @@ public class SimpleAITest {
         List<Card> aiHand = Arrays.asList(new Card(Card.Suit.BLUE, 1));
         List<Card> otherHand = Arrays.asList(new Card(Card.Suit.RED, 1));
         
-        Map<Player, List<Card>> hands = new HashMap<>();
-        hands.put(ai, aiHand);
-        hands.put(other, otherHand);
+        Map<String, List<Card>> hands = new HashMap<>();
+        hands.put(ai.getName(), aiHand);
+        hands.put(other.getName(), otherHand);
         stateBuilder.hands(hands);
         
-        List<Player> players = Arrays.asList(ai, other);
+        List<String> players = Arrays.asList(ai.getName(), other.getName());
         stateBuilder.players(players);
         stateBuilder.currentPlayerIndex(0);
         stateBuilder.infoTokens(0); // No hints available
@@ -146,8 +145,8 @@ public class SimpleAITest {
         ai.initialize(testState);
         
         // Make AI aware of the useless card
-        ai.receiveClue(new Player.Clue(Player.ClueType.SUIT, Card.Suit.BLUE, new int[]{0}));
-        ai.receiveClue(new Player.Clue(Player.ClueType.RANK, 1, new int[]{0}));
+        ai.receiveClue(new Player.Clue(Player.ClueType.SUIT, Card.Suit.BLUE, Arrays.asList(0)));
+        ai.receiveClue(new Player.Clue(Player.ClueType.RANK, 1, Arrays.asList(0)));
         
         Action action = ai.takeTurn(testState);
         

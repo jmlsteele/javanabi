@@ -23,9 +23,9 @@ public class SecurityTest {
         GameState playerView = game.getPlayerGameState(testPlayer);
         
         // Try to access the player's own hand
-        List<?> ownHand = playerView.getPlayerHand(testPlayer);
+        List<?> ownHand = playerView.getPlayerHand(testPlayer.getName());
         
-        System.out.println("Player hand size: " + playerView.getPlayerHandSize(testPlayer));
+        System.out.println("Player hand size: " + playerView.getPlayerHandSize(testPlayer.getName()));
         System.out.println("Hand contents: " + ownHand);
         
         // Verify that all cards are null (hidden)
