@@ -42,11 +42,4 @@ public class AlwaysPlaysPlayer implements Player {
     public void notifyGameEnd(int score, boolean won) {
         System.out.println(name + " - Game ended! Score: " + score + ", Won: " + won);
     }
-
-    @Override
-    public void drawCard() {
-        System.out.println(name + " - drew card!");
-        
-    }
-
 }

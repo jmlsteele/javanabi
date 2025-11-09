@@ -43,10 +43,4 @@ public class AlwaysDiscardsPlayer implements Player {
         System.out.println(name + " - Game ended! Score: " + score + ", Won: " + won);
     }
 
-    @Override
-    public void drawCard() {
-        System.out.println(name + " - drew card!");
-        
-    }
-
 }
