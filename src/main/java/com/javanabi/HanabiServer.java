@@ -10,6 +10,7 @@ import com.javanabi.game.action.PlayCardAction;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 public class HanabiServer {
     public static void main(String[] args) {
@@ -56,8 +57,17 @@ public class HanabiServer {
         System.out.println("  Current player: " + game.getCurrentPlayer().getName());
         
         System.out.println("\nStarting game simulation...");
-        
+        Scanner scanner = new Scanner(System.in);
+        boolean autoPlay = false;
+
         while (!game.isGameOver()) {
+            if (!autoPlay) {
+                System.out.print("\n> ");
+                String input = scanner.nextLine();
+                if (input.trim().equalsIgnoreCase("auto")) {
+                    autoPlay = true;
+                }
+            }            
             Player currentPlayer = game.getCurrentPlayer();
             System.out.println("\n" + currentPlayer.getName() + "'s turn:");
             Action action = currentPlayer.takeTurn(game.getPlayerGameState(currentPlayer));
@@ -77,6 +87,7 @@ public class HanabiServer {
         System.out.println("\nGame Over!");
         System.out.println("Final Score: " + game.getScore());
         System.out.println("Game Won: " + (game.getScore() == 25));
+        scanner.close();
     }
     
     private static String getPlayerNames(List<Player> players) {
@@ -92,7 +103,7 @@ public class HanabiServer {
         return action.accept(new Action.ActionVisitor<String>() {
             @Override
             public String visit(GiveInfoAction giveInfoAction) {
-                return "Give info about " + giveInfoAction.getClueType() + " " + giveInfoAction.getClueValue() + 
+                return "Give info about " + giveInfoAction.getClue().getType() + " " + giveInfoAction.getClue().getValue() + 
                        " to " + giveInfoAction.getTargetPlayer();
             }
             
