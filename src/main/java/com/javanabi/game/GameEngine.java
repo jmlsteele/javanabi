@@ -77,6 +77,31 @@ public class GameEngine {
         if (!validateAction(action, currentPlayer)) {
             return false;
         }
+        //if this is a GiveInfoAction we need to fix the indicies in the clue
+        if (action instanceof GiveInfoAction) {
+            GiveInfoAction gia = (GiveInfoAction) action;
+            String targetPlayerName = gia.getTargetPlayer();
+            List<Card> targetHand = gameState.getPlayerHand(targetPlayerName);
+            List<Integer> matchingIndices = new ArrayList<>();
+
+            Player.Clue actionClue = gia.getClue();
+            for (int i = 0; i < targetHand.size(); i++) {
+                Card card = targetHand.get(i);
+                
+                if (actionClue.getType() == Player.ClueType.SUIT && card.getSuit().equals(actionClue.getValue())) {
+                    matchingIndices.add(i);
+                } else if (actionClue.getType() == Player.ClueType.RANK && card.getRank() == (Integer) actionClue.getValue()){
+                    matchingIndices.add(i);
+                }
+            }
+            
+            Player.Clue clue = new Player.Clue(
+                gia.getClue().getType(),
+                gia.getClue().getValue(),
+                matchingIndices
+            );
+            action = new GiveInfoAction(targetPlayerName, clue);
+        }
         
         Action.ActionVisitor<GameState> visitor = new Action.ActionVisitor<GameState>() {
             @Override
@@ -116,7 +141,7 @@ public class GameEngine {
             @Override
             public Boolean visit(GiveInfoAction giveInfoAction) {
                 return gameState.getInfoTokens() > 0 && 
-                       !giveInfoAction.getTargetPlayer().equals(currentPlayer);
+                       !giveInfoAction.getTargetPlayer().equals(currentPlayer.getName());
             }
             
             @Override
@@ -142,29 +167,7 @@ public class GameEngine {
     private GameState handleGiveInfoAction(GiveInfoAction action) {
         String targetPlayerName = action.getTargetPlayer();
         Player targetPlayer = this.players.get(this.playerNames.indexOf(targetPlayerName));
-        List<Card> targetHand = gameState.getPlayerHand(targetPlayerName);
-        List<Integer> matchingIndices = new ArrayList<>();
-        
-        //even though the GiveInfoAction has the indicies in them the player could lie
-        //so we generate our own indicies
-        Player.Clue actionClue = action.getClue();
-        for (int i = 0; i < targetHand.size(); i++) {
-            Card card = targetHand.get(i);
-            
-            if (actionClue.getType() == Player.ClueType.SUIT && card.getSuit().equals(actionClue.getValue())) {
-                matchingIndices.add(i);
-            } else if (actionClue.getType() == Player.ClueType.RANK && card.getRank() == (Integer) actionClue.getValue()){
-                matchingIndices.add(i);
-            }
-        }
-        
-        Player.Clue clue = new Player.Clue(
-            action.getClue().getType(),
-            action.getClue().getValue(),
-            matchingIndices
-        );
-        
-        targetPlayer.receiveClue(clue);
+        targetPlayer.receiveClue(action.getClue());
         
         return GameState.builder()
             .hands(gameState.getHands())
