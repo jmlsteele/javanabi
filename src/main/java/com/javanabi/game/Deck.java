@@ -6,7 +6,7 @@ import java.util.*;
 
 public class Deck {
     private final Queue<Card> cards;
-    private static final int[] RANK_COUNTS = {3, 2, 2, 2, 1};
+    public static final int[] RANK_COUNTS = {3, 2, 2, 2, 1};
     
     public Deck() {
         this.cards = new ArrayDeque<>();
