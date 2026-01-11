@@ -11,10 +11,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class SimpleAIPlayer implements Player {
-    private final String name;
-    private GameState currentState;
-    private Map<String, List<CardKnowledge>> playerCardKnowledge;
-    private List<Card> remainingCards;
+    protected final String name;
+    protected GameState currentState;
+    protected Map<String, List<CardKnowledge>> playerCardKnowledge;
+    protected List<Card> remainingCards;
     
     public SimpleAIPlayer(String name) {
         this.name = name;
@@ -86,12 +86,12 @@ public class SimpleAIPlayer implements Player {
         updateKnowledge(name, clue);
     }
 
-    private void updateKnowledge(String player, Clue clue) {
-        for (int i=0;i<currentState.getPlayerHandSize(this.name);i++) {
+    protected void updateKnowledge(String player, Clue clue) {
+        for (int i=0;i<currentState.getPlayerHandSize(player);i++) {
             if (clue.getCardIndices().contains(i)) {
-                playerCardKnowledge.get(this.name).get(i).applyClue(clue);
-            }else {
-                playerCardKnowledge.get(this.name).get(i).applyNegativeClue(clue);
+                playerCardKnowledge.get(player).get(i).applyClue(clue);
+            } else {
+                playerCardKnowledge.get(player).get(i).applyNegativeClue(clue);
             }
         }
     }
@@ -134,7 +134,7 @@ public class SimpleAIPlayer implements Player {
         System.out.println(name + " - Game ended! Score: " + score + ", Won: " + won);
     }
 
-    private Optional<Integer> findCertainPlayableCard() {
+    protected Optional<Integer> findCertainPlayableCard() {
         int handSize = currentState.getPlayerHandSize(this.name);
         
         for (int i = 0; i < handSize; i++) {
@@ -146,7 +146,7 @@ public class SimpleAIPlayer implements Player {
         return Optional.empty();
     }
     
-    private boolean isCardCertainPlayable(CardKnowledge knowledge) {
+    protected boolean isCardCertainPlayable(CardKnowledge knowledge) {
         //if we know exactly what card it is, we know if it's playable or not
         if (knowledge.isKnownSuit() && knowledge.isKnownRank()) {
             return isCardPlayable(new Card(knowledge.getKnownSuit(), knowledge.getKnownRank()));
@@ -163,12 +163,12 @@ public class SimpleAIPlayer implements Player {
         return false;
     }
     
-    private boolean isCardPlayable(Card card) {
+    protected boolean isCardPlayable(Card card) {
         List<Card> playableCards = currentState.getPlayableCards();
         return playableCards.contains(card);
     }
     
-    private Optional<GiveInfoAction> findUsefulHint() {
+    protected Optional<GiveInfoAction> findUsefulHint() {
         List<String> otherPlayers = getOtherPlayers();
         
         for (String targetPlayer : otherPlayers) {
@@ -190,7 +190,10 @@ public class SimpleAIPlayer implements Player {
                     }
                 }
             }
-            if (hints.isEmpty()) return Optional.empty();
+            if (hints.isEmpty()) {
+                System.out.println("Found no useful");
+                return Optional.empty();
+            }
             System.out.println(hints);
             //TODO now go through the hints and see which one would be best
             return Optional.of(hints.get(0));
@@ -199,7 +202,7 @@ public class SimpleAIPlayer implements Player {
         return Optional.empty();
     }
     
-    private List<GiveInfoAction> createHintForCard(String targetPlayer, int cardIndex, Card card, CardKnowledge currentKnowledge) {
+    protected List<GiveInfoAction> createHintForCard(String targetPlayer, int cardIndex, Card card, CardKnowledge currentKnowledge) {
         List<Card> targetHand = currentState.getPlayerHand(targetPlayer);
         List<Integer> matchingIndices = new ArrayList<>();
         List<GiveInfoAction> hints = new ArrayList<>();
@@ -235,7 +238,7 @@ public class SimpleAIPlayer implements Player {
         return hints;
     }
     
-    private Optional<Integer> findUselessCard() {
+    protected Optional<Integer> findUselessCard() {
         int handSize = currentState.getPlayerHandSize(this.name);
         
         for (int i = 0; i < handSize; i++) {
@@ -249,7 +252,7 @@ public class SimpleAIPlayer implements Player {
         return Optional.empty();
     }
     
-    private boolean isCardUseless(CardKnowledge knowledge) {
+    protected boolean isCardUseless(CardKnowledge knowledge) {
         if (!knowledge.isKnownSuit() || !knowledge.isKnownRank()) {
             return false;
         }
@@ -271,9 +274,9 @@ public class SimpleAIPlayer implements Player {
         return false;
     }
     
-    private List<String> getOtherPlayers() {
+    protected List<String> getOtherPlayers() {
         return currentState.getPlayers().stream()
-                .filter(p -> !p.equals(this))
+                .filter(p -> !p.equals(this.getName()))
                 .collect(Collectors.toList());
     }
 }
